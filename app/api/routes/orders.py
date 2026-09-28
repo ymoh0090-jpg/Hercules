@@ -8,22 +8,21 @@ from app.models.product import Product
 from app.models.order import Order
 from app.models.order_item import OrderItem
 from app.api.schemas.order import OrderResponse
+from app.core.security import get_current_user
+from app.models.user import User
 
 
 router = APIRouter()
 
 
-@router.post(
-    "/orders/{user_id}",
-    response_model=OrderResponse
-)
+@router.post("/orders")
 def create_order(
-    user_id: int,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     try:
         cart = db.query(Cart).filter(
-            Cart.user_id == user_id
+            Cart.user_id == current_user.id
         ).first()
 
         if not cart:
@@ -64,14 +63,13 @@ def create_order(
             total_price += product.price * item.quantity
 
         order = Order(
-            user_id=user_id,
+            user_id=current_user.id,
             total_price=total_price,
             status="pending"
         )
 
         db.add(order)
         db.flush()
-
 
         for item in items:
             product = db.query(Product).filter(
@@ -99,21 +97,36 @@ def create_order(
     except Exception:
         db.rollback()
         raise
-@router.get("/orders/{user_id}", response_model=list[OrderResponse])
+
+
+@router.get("/orders", response_model=list[OrderResponse])
 def get_orders(
-    user_id: int,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     orders = db.query(Order).filter(
-        Order.user_id == user_id
+        Order.user_id == current_user.id
     ).all()
 
     return orders
+
+
 @router.get("/orders/{order_id}/details")
 def get_order_details(
     order_id: int,
     db: Session = Depends(get_db)
 ):
+    if not order:
+        raise HTTPException(
+            status_code=404,
+            detail="Order not found"
+        )
+
+    if order.user_id != current_user.id:
+        raise HTTPException(
+            status_code=403,
+            detail="You do not have access to this order"
+        )
     order = db.query(Order).filter(
         Order.id == order_id
     ).first()

@@ -6,28 +6,20 @@ from app.models.cart import Cart
 from app.models.cart_item import CartItem
 from app.models.product import Product
 from app.models.user import User
+from app.core.security import get_current_user
 
 
 router = APIRouter()
 
 
-@router.post("/carts/{user_id}")
-@router.post("/carts/{user_id}")
-def create_cart(
-    user_id: int,
-    db: Session = Depends(get_db)
-):
-    user = db.query(User).filter(
-        User.id == user_id
-    ).first()
 
-    if not user:
-        raise HTTPException(
-            status_code=404,
-            detail="User not found"
-        )
+@router.post("/carts")
+def create_cart(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     existing_cart = db.query(Cart).filter(
-        Cart.user_id == user_id
+        Cart.user_id == current_user.id
     ).first()
 
     if existing_cart:
@@ -36,7 +28,8 @@ def create_cart(
             detail="User already has a cart"
         )
 
-    cart = Cart(user_id=user_id)
+    cart = Cart(user_id=current_user.id)
+
     db.add(cart)
     db.commit()
     db.refresh(cart)
@@ -48,7 +41,8 @@ def add_item_to_cart(
     cart_id: int,
     product_id: int,
     quantity: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     if quantity <= 0:
         raise HTTPException(
@@ -68,6 +62,12 @@ def add_item_to_cart(
         raise HTTPException(
             status_code=404,
             detail="Cart not found"
+        )
+
+    if cart.user_id != current_user.id:
+        raise HTTPException(
+            status_code=403,
+            detail="You do not have access to this cart"
         )
 
     if not product:
@@ -97,7 +97,6 @@ def add_item_to_cart(
             product_id=product_id,
             quantity=quantity
         )
-
         db.add(item)
 
     db.commit()
@@ -107,14 +106,24 @@ def add_item_to_cart(
 @router.get("/carts/{cart_id}")
 def get_cart(
     cart_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     cart = db.query(Cart).filter(
         Cart.id == cart_id
     ).first()
 
     if not cart:
-        return {"error": "Cart not found"}
+        raise HTTPException(
+            status_code=404,
+            detail="Cart not found"
+        )
+
+    if cart.user_id != current_user.id:
+        raise HTTPException(
+            status_code=403,
+            detail="You do not have access to this cart"
+        )
 
     items = db.query(CartItem).filter(
         CartItem.cart_id == cart_id

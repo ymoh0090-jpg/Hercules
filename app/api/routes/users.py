@@ -3,7 +3,9 @@ from sqlalchemy.orm import Session
 
 from app.database.dependencies import get_db
 from app.models.user import User
-from app.api.schemas.user import UserResponse, UserCreate
+from app.api.schemas.user import UserResponse, UserCreate, UserLogin
+from app.core.security import password_hash, create_access_token, get_current_user
+
 
 
 router = APIRouter()
@@ -30,7 +32,10 @@ def create_user(
             status_code=409,
             detail="Username already exists"
         )
-    user = User(username=data.username)
+    user = User(
+        username=data.username,
+        password_hash=password_hash.hash(data.password)
+    )
 
     db.add(user)
     db.commit()
@@ -38,6 +43,12 @@ def create_user(
 
     return user
 
+
+@router.get("/me", response_model=UserResponse)
+def get_me(
+    current_user: User = Depends(get_current_user)
+):
+    return current_user
 
 @router.get("/users/{user_id}", response_model=UserResponse)
 def get_user(
@@ -55,3 +66,36 @@ def get_user(
         )
 
     return user
+
+
+@router.post("/login")
+def login(
+    data: UserLogin,
+    db: Session = Depends(get_db)
+):
+    user = db.query(User).filter(
+        User.username == data.username
+    ).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid username or password"
+        )
+
+    if not password_hash.verify(
+        data.password,
+        user.password_hash
+    ):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid username or password"
+        )
+
+    token = create_access_token(user.username)
+
+    return {
+        "access_token": token,
+        "token_type": "bearer"
+    }
+

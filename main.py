@@ -12,6 +12,7 @@ from app.models.cart_item import CartItem
 from app.models.order import Order
 from app.models.order_item import OrderItem
 from app.api.routes.cart import router as cart_router
+from app.api.routes.payments import router as payments_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -28,3 +29,4 @@ app.include_router(users_router)
 app.include_router(products_router)
 app.include_router(cart_router)
 app.include_router(orders_router)
+app.include_router(payments_router)
