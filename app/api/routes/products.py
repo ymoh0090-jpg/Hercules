@@ -3,15 +3,20 @@ from sqlalchemy.orm import Session
 
 from app.database.dependencies import get_db
 from app.models.product import Product
-from app.api.schemas.product import ProductResponse, ProductUpdate
-
+from app.api.schemas.product import (
+    ProductCreate,
+    ProductResponse,
+    ProductUpdate
+)
 
 
 router = APIRouter()
 
 
 @router.get("/products", response_model=list[ProductResponse])
-def get_products(db: Session = Depends(get_db)):
+def get_products(
+    db: Session = Depends(get_db)
+):
     products = db.query(Product).all()
 
     return products
@@ -19,15 +24,13 @@ def get_products(db: Session = Depends(get_db)):
 
 @router.post("/products", response_model=ProductResponse)
 def create_product(
-    name: str,
-    price: float,
-    stock: int,
+    data: ProductCreate,
     db: Session = Depends(get_db)
 ):
     product = Product(
-        name=name,
-        price=price,
-        stock=stock
+        name=data.name,
+        price=data.price,
+        stock=data.stock
     )
 
     db.add(product)
@@ -79,6 +82,7 @@ def update_product(
     db.refresh(product)
 
     return product
+
 
 @router.delete("/products/{product_id}")
 def delete_product(

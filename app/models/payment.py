@@ -16,6 +16,12 @@ class Payment(Base):
         unique=True
     )
 
+    authority: Mapped[str | None] = mapped_column(
+        String(100),
+        unique=True,
+        nullable=True
+    )
+
     amount: Mapped[float] = mapped_column(
         Numeric(10, 2)
     )
