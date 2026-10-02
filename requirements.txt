@@ -6,4 +6,7 @@ pydantic
 pydantic-settings
 python-dotenv
 httpx
+PyJWT
+pwdlib
+zarinpal-py-sdk
 pytest

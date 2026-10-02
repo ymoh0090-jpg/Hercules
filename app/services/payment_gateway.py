@@ -13,6 +13,10 @@ config = Config(
 zarinpal = ZarinPal(config)
 
 
+# =========================================================
+# Create Payment
+# =========================================================
+
 def create_payment(
     amount: int,
     description: str,
@@ -22,6 +26,22 @@ def create_payment(
         "amount": amount,
         "description": description,
         "callback_url": callback_url,
+    })
+
+    return result
+
+
+# =========================================================
+# Verify Payment
+# =========================================================
+
+def verify_payment(
+    amount: int,
+    authority: str
+):
+    result = zarinpal.verifications.verify({
+        "amount": amount,
+        "authority": authority,
     })
 
     return result

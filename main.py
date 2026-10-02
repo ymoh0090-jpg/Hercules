@@ -6,6 +6,7 @@ from app.api.routes.products import router as products_router
 from app.database.base import Base
 from app.database.database import engine
 from app.api.routes.orders import router as orders_router
+from app.models.user import User
 from app.models.product import Product
 from app.models.cart import Cart
 from app.models.cart_item import CartItem
@@ -13,6 +14,9 @@ from app.models.order import Order
 from app.models.order_item import OrderItem
 from app.api.routes.cart import router as cart_router
 from app.api.routes.payments import router as payments_router
+
+
+
 
 Base.metadata.create_all(bind=engine)
 
