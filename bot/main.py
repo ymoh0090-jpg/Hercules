@@ -1,5 +1,7 @@
 import os
-
+from bot.handlers.products import products_callback
+from telegram import Update
+from bot.keyboards.main import buyer_menu
 from dotenv import load_dotenv
 from telegram.ext import (
     Application,
@@ -7,9 +9,10 @@ from telegram.ext import (
     CommandHandler,
     ConversationHandler,
     MessageHandler,
+    ContextTypes,
     filters,
 )
-
+from bot.handlers.products import add_to_cart_callback
 from bot.handlers.start import start, help_command
 from bot.handlers.menu import (
     menu_callback,
@@ -68,9 +71,34 @@ if not TOKEN:
         "Set BOT_TOKEN in your .env file."
     )
 
+async def back_to_main(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+) -> None:
+    query = update.callback_query
+
+    await query.answer()
+
+    await query.message.edit_text(
+        "🏠 <b>Hercules Main Menu</b>",
+        parse_mode="HTML",
+        reply_markup=buyer_menu()
+    )
 
 def main() -> None:
-    app = Application.builder().token(TOKEN).build()
+    app = (
+        Application.builder()
+        .token(TOKEN)
+        .connect_timeout(30)
+        .read_timeout(30)
+        .write_timeout(30)
+        .pool_timeout(30)
+        .get_updates_connect_timeout(30)
+        .get_updates_read_timeout(30)
+        .get_updates_write_timeout(30)
+        .get_updates_pool_timeout(30)
+        .build()
+    )
 
     # =========================
     # Basic Commands
@@ -94,7 +122,12 @@ def main() -> None:
             pattern="^products$"
         )
     )
-
+    app.add_handler(
+        CallbackQueryHandler(
+            back_to_main,
+            pattern="^back_main$"
+        )
+    )
     # =========================
     # Buyer: Cart / Orders / Account
     # =========================

@@ -49,6 +49,19 @@ async def products_callback(
             )
         ])
 
+    keyboard.append([
+        InlineKeyboardButton(
+            "🔙 Back",
+            callback_data="back_main"
+        )
+    ])
+
+    await query.message.edit_text(
+        text,
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+
     await query.message.edit_text(
         text,
         parse_mode="HTML",
